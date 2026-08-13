@@ -40,7 +40,7 @@ dependencies = [
 ]
 
 [project.scripts]
-rlinf-robotwin-download-assets = "robotwin.assets:main"
+robotwin-download-assets = "robotwin.assets:main"
 
 [project.urls]
 Homepage = "https://github.com/RoboTwin-Platform/RoboTwin"
