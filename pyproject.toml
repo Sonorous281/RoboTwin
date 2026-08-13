@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=69", "torch==2.8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rlinf-robotwin-runtime"
+version = "0.1.0"
+description = "Installable RoboTwin runtime and dependency contract maintained for RLinf"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.11,<3.12"
+authors = [{name = "RLinf Contributors"}]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: GPU :: NVIDIA CUDA :: 12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "gymnasium==0.29.1",
+    "huggingface-hub>=0.27.1",
+    "imageio==2.34.2",
+    "matplotlib",
+    "mplib==0.2.1; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "numpy==1.26.4",
+    "opencv-python==4.9.0.80",
+    "open3d==0.18.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "pillow>=10",
+    "pyyaml",
+    "sapien==3.0.0b1; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "scipy==1.10.1",
+    "setuptools>=69.5.1,<75.9",
+    "torch==2.8.0",
+    "toppra==0.6.3",
+    "transforms3d==0.4.2",
+    "trimesh==4.4.3",
+    "warp-lang==1.11.1; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "yourdfpy>=0.0.53",
+]
+
+[project.scripts]
+rlinf-robotwin-download-assets = "robotwin.assets:main"
+
+[project.urls]
+Homepage = "https://github.com/RoboTwin-Platform/RoboTwin"
+Repository = "https://github.com/RoboTwin-Platform/RoboTwin"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = [".", "vendor/curobo/src"]
+include = ["robotwin*", "curobo*"]
+exclude = ["script*", "description*", "task_config*", "tests*"]
+
+[tool.setuptools.package-data]
+robotwin = [
+    "configs/task/*.yml",
+    "description/task_instruction/*.json",
+    "description/objects_description/**/*.json",
+]
+curobo = ["LICENSE", "LICENSE_ASSETS", "py.typed", "content/**/*", "curobolib/*.so"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

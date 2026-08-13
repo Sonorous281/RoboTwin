@@ -27,3 +27,6 @@ envs/curobo/*
 /*.txt
 
 gen_reward_video/
+dist/
+build/
+*.egg-info/

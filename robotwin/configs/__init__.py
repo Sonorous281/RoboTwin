@@ -1,0 +1,1 @@
+"""Packaged RoboTwin configuration resources."""

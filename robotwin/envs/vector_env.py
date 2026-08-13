@@ -1,14 +1,10 @@
 import importlib
 import os
 import gc
-import sys
 
 import cv2
 import torch
 import yaml
-from envs import *
-
-sys.path.append("../../")
 
 import logging
 import multiprocessing as mp
@@ -19,11 +15,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import gymnasium as gym
 import numpy as np
-from description.utils.generate_episode_instructions import (
-    generate_episode_descriptions,
-)
-from envs._GLOBAL_CONFIGS import *
-from envs.utils.create_actor import UnStableError
+from robotwin.assets import validate_root
+from robotwin.config import load_task_config
+from robotwin.description import generate_episode_descriptions
+from robotwin.envs.utils.create_actor import UnStableError
 
 
 LOG_LEVEL = os.getenv("VECTOR_ENV_LOG_LEVEL", "WARNING").upper()
@@ -36,7 +31,7 @@ logging.getLogger("curobo").setLevel(logging.ERROR)
 
 
 def class_decorator(task_name):
-    envs_module = importlib.import_module(f"envs.{task_name}")
+    envs_module = importlib.import_module(f"robotwin.envs.{task_name}")
     try:
         env_class = getattr(envs_module, task_name)
         env_instance = env_class()
@@ -235,7 +230,17 @@ class VectorEnv(gym.Env):
         self.env_seeds = env_seeds
         if self.env_seeds is not None:
             assert len(self.env_seeds) == n_envs
-        assets_path = os.getenv("ASSETS_PATH")
+        configured_assets = os.getenv("ROBOTWIN_ASSETS_ROOT")
+        if not configured_assets:
+            raise ValueError(
+                "ROBOTWIN_ASSETS_ROOT must point to the root containing assets/"
+            )
+        assets_identity = validate_root(configured_assets)
+        assets_path = assets_identity["root"]
+        # Native task helpers still consume ASSETS_PATH internally. Keep that
+        # compatibility detail inside the installed runtime package rather than
+        # exposing it as part of the user-facing contract.
+        os.environ["ASSETS_PATH"] = assets_path
         self.task_name = task_config.get("task_name")
 
         head_camera_type = "D435"
@@ -246,13 +251,8 @@ class VectorEnv(gym.Env):
         args["clear_cache_freq"] = max(1, int(args.get("clear_cache_freq", 8)))
 
         embodiment_type = args.get("embodiment")
-        embodiment_config_path = os.path.join(CONFIGS_PATH, "_embodiment_config.yml")
-
-        with open(embodiment_config_path, "r", encoding="utf-8") as f:
-            _embodiment_types = yaml.load(f.read(), Loader=yaml.FullLoader)
-
-        with open(CONFIGS_PATH + "_camera_config.yml", "r", encoding="utf-8") as f:
-            _camera_config = yaml.load(f.read(), Loader=yaml.FullLoader)
+        _embodiment_types = load_task_config("_embodiment_config")
+        _camera_config = load_task_config("_camera_config")
 
         args["head_camera_h"] = _camera_config[head_camera_type]["h"]
         args["head_camera_w"] = _camera_config[head_camera_type]["w"]
@@ -260,7 +260,7 @@ class VectorEnv(gym.Env):
         def get_embodiment_file(embodiment_type):
             robot_file = _embodiment_types[embodiment_type]["file_path"]
             if robot_file is None:
-                raise "No embodiment files"
+                raise ValueError(f"no asset path is configured for {embodiment_type!r}")
             return robot_file
 
         def get_embodiment_config(robot_file):
@@ -287,7 +287,7 @@ class VectorEnv(gym.Env):
             args["embodiment_dis"] = embodiment_type[2]
             args["dual_arm_embodied"] = False
         else:
-            raise "embodiment items should be 1 or 3"
+            raise ValueError("embodiment must contain either one or three items")
 
         args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
         args["right_embodiment_config"] = get_embodiment_config(
