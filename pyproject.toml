@@ -44,7 +44,15 @@ dependencies = [
     "matplotlib",
     "mplib==0.2.1; platform_system == 'Linux' and platform_machine == 'x86_64'",
     "numpy==1.26.4",
-    "opencv-python-headless==4.9.0.80",
+    # Non-headless (not opencv-python-headless): sapien==3.0.0b1 transitively
+    # requires ``opencv-python>=4.0`` (non-headless), so declaring headless
+    # here would install BOTH variants, recreating the cv2/ directory duality
+    # (the two wheels share cv2/ and overwrite each other's files). Pinning
+    # the full ``opencv-python==4.9.0.80`` satisfies sapien's requirement as a
+    # single install — the headless optimization is unreachable while sapien
+    # forces the full variant. cv2 is not imported on the inference path
+    # (Phase 6 import trace), so the GUI components are unused but harmless.
+    "opencv-python==4.9.0.80",
     "open3d==0.18.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
     "pillow>=10",
     "pyyaml",
