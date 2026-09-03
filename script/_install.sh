@@ -32,20 +32,16 @@ URDF_LOADER=$SAPIEN_LOCATION/wrapper/urdf_loader.py
 # 674                 self.ignore_pairs = self.parse_srdf(f.read())
 sed -i -E 's/("r")(\))( as)/\1, encoding="utf-8") as/g' $URDF_LOADER
 
-
-echo "Adjusting code in mplib/planner.py ..."
-# location of mplib, like "~/.conda/envs/RoboTwin/lib/python3.10/site-packages/mplib"
-MPLIB_LOCATION=$(pip show mplib | grep 'Location' | awk '{print $2}')/mplib
-
-# Adjust some code in planner.py
-# ----------- before -----------
-# 807             if np.linalg.norm(delta_twist) < 1e-4 or collide or not within_joint_limit:
-# 808                 return {"status": "screw plan failed"}
-# ----------- after  ----------- 
-# 807             if np.linalg.norm(delta_twist) < 1e-4 or not within_joint_limit:
-# 808                 return {"status": "screw plan failed"}
-PLANNER=$MPLIB_LOCATION/planner.py
-sed -i -E 's/(if np.linalg.norm\(delta_twist\) < 1e-4 )(or collide )(or not within_joint_limit:)/\1\3/g' $PLANNER
+# Note: the mplib planner.py "drop collide bail" patch is intentionally NOT
+# applied here. mplib is a vestigial code path in the RLinf/RPent runtime:
+# robots/robotwin/env_server.py hardcodes planner_backend="curobo", and no
+# code path sets planner_backend="mplib" (only the default-fallback and the
+# unused `elif mplib` branch in robotwin/envs/robot/robot.py exist). The
+# MplibWrapperPlanner is therefore never instantiated in production, so
+# patching mplib/planner.py has no effect on eval or data collection. The
+# patch is dropped to slim the install contract. (MplibWrapperPlanner is left
+# in place as an optional backend; mplib==0.2.1 remains a declared dep until
+# the inference-only dep review.)
 
 echo "Installing Curobo (pinned @ d64c4b, --no-build-isolation) ..."
 # cuRobo is no longer vendored. Install the exact upstream commit (d64c4b)
