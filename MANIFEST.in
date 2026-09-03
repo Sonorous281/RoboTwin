@@ -2,7 +2,3 @@ include LICENSE
 graft robotwin/configs
 graft robotwin/description/task_instruction
 graft robotwin/description/objects_description
-graft vendor/curobo/src/curobo/content
-include vendor/curobo/src/curobo/py.typed
-include vendor/curobo/LICENSE
-include vendor/curobo/LICENSE_ASSETS

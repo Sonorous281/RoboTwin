@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69", "torch==2.8.0", "wheel"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -17,6 +17,18 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.11",
 ]
+# NOTE: ``curobo`` is a runtime requirement for the CuroboPlanner backend but is
+# intentionally NOT listed in ``dependencies``. Its ``[build-system]`` requires
+# ``torch`` (unpinned), so a resolver honouring build isolation would pull a
+# fresh CPU/wrong-CUDA torch into the isolated build env and compile the CUDA
+# extensions against it. It is instead installed with ``--no-build-isolation``
+# (so it compiles against the already-installed ``torch==2.8.0+cu128``) from
+# the exact upstream commit that was previously vendored:
+#   pip install --no-build-isolation \
+#     "curobo @ git+https://github.com/NVlabs/curobo.git@d64c4b005459db10c5dd867d8b30a87d5bda9bdb"
+# ``robotwin.envs.robot.planner`` imports ``curobo`` behind a ``try/except``, so
+# the robotwin wheel itself imports cleanly without curobo present; curobo is
+# only needed when ``CuroboPlanner`` is instantiated. See ``script/_install.sh``.
 dependencies = [
     "gymnasium==0.29.1",
     "huggingface-hub>=0.27.1",
@@ -50,8 +62,8 @@ Repository = "https://github.com/RoboTwin-Platform/RoboTwin"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = [".", "vendor/curobo/src"]
-include = ["robotwin*", "curobo*"]
+where = ["."]
+include = ["robotwin*"]
 exclude = ["script*", "description*", "task_config*", "tests*"]
 
 [tool.setuptools.package-data]
@@ -60,7 +72,6 @@ robotwin = [
     "description/task_instruction/*.json",
     "description/objects_description/**/*.json",
 ]
-curobo = ["LICENSE", "LICENSE_ASSETS", "py.typed", "content/**/*", "curobolib/*.so"]
 
 [tool.ruff]
 line-length = 100

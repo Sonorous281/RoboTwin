@@ -47,12 +47,13 @@ MPLIB_LOCATION=$(pip show mplib | grep 'Location' | awk '{print $2}')/mplib
 PLANNER=$MPLIB_LOCATION/planner.py
 sed -i -E 's/(if np.linalg.norm\(delta_twist\) < 1e-4 )(or collide )(or not within_joint_limit:)/\1\3/g' $PLANNER
 
-echo "Installing Curobo ..."
-cd envs
-git clone https://github.com/NVlabs/curobo.git
-cd curobo
-pip install -e . --no-build-isolation
-cd ../..
+echo "Installing Curobo (pinned @ d64c4b, --no-build-isolation) ..."
+# cuRobo is no longer vendored. Install the exact upstream commit (d64c4b)
+# that was previously vendored, with --no-build-isolation so its CUDA
+# extensions compile against the already-installed torch==2.8.0+cu128
+# (curobo's [build-system] requires torch unpinned, which would pull a
+# wrong torch under build isolation). See pyproject.toml note.
+pip install --no-build-isolation "curobo @ git+https://github.com/NVlabs/curobo.git@d64c4b005459db10c5dd867d8b30a87d5bda9bdb"
 
 echo "Installation basic environment complete!"
 echo -e "You need to:"
